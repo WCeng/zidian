@@ -7,9 +7,7 @@ import org.jsoup.select.Elements;
 import org.wceng.component.Data;
 import org.wceng.component.Process;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class WordEntityProcess extends Process {
 
@@ -25,7 +23,7 @@ public class WordEntityProcess extends Process {
         String bushou = null;
         String zaozifa = null;
         String bishun = null;
-        List<String> jieshi = null;
+        List<HashMap<String, List<String>>> jieshi = null;
 
 
         Elements elementsByClass = document.getElementsByClass("ml15");
@@ -47,7 +45,10 @@ public class WordEntityProcess extends Process {
         bishun = document.getElementsByClass("list_tico").get(0).getElementsByTag("li").get(5).text()
                 .substring(3);
 
-        jieshi = parseJieshi(document);
+        try {
+            jieshi = parseJieshi(document);
+        } catch (Exception ignored) {
+        }
 
         data.put("word", word);
         data.put("pinyin", pinyin);
@@ -78,23 +79,42 @@ public class WordEntityProcess extends Process {
         return Arrays.asList(split);
     }
 
-    private List<String> parseJieshi(Document document) {
+    private List<HashMap<String, List<String>>> parseJieshi(Document document) throws Exception {
 
-        Elements e0 = document.getElementsByClass("zi_text_content");
-        if (e0.size() == 0) return null;
+        List<HashMap<String, List<String>>> pinyinList = new ArrayList<>();
 
-        Element e1 = e0.get(0);
-        Element e2 = e1.getElementsByTag("p").get(0);
-        String text = e2.text();
-        int i = text.indexOf("◎ ");
-        if (i > -1) {
-            text = text.substring(i + 2);
-            String[] split = text.split(" ◎ ");
-            return new ArrayList<>(Arrays.asList(split));
-        } else {
-            return null;
+        Element e1 = document.getElementsByClass("zi_text_content").get(0);
+        String text = e1.getElementsByTag("p").get(0).text();
+
+        text = text.substring(text.indexOf("● ") + 2);
+        String[] split1 = text.split("● ");
+
+        for (int i = 0; i < split1.length; i++) {
+            String s = split1[i];
+
+            String pinyin = s.substring(0, text.indexOf("◎"));
+            if (pinyin.contains("）")) {
+                pinyin =pinyin.substring(pinyin.indexOf("）") + 1).trim().split(" ")[0];
+            }else {
+                pinyin = pinyin.substring(1).trim().split(" ")[0];
+            }
+
+            String[] jieshi = s.substring(text.indexOf("◎")).split("◎");
+
+            List<String> jieshiList = new ArrayList<>();
+
+            for (String s1 : jieshi){
+                s1 = s1.trim();
+                if(s1.length() != 0){
+                    jieshiList.add(s1.replace("◎", ""));
+                }
+            }
+
+            HashMap<String, List<String>> pinyin_jieshi = new LinkedHashMap<>();
+            pinyin_jieshi.put(pinyin, jieshiList);
+            pinyinList.add(pinyin_jieshi);
         }
-
+        return pinyinList;
     }
 
 

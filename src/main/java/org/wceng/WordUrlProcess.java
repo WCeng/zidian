@@ -15,7 +15,7 @@ public class WordUrlProcess extends Process {
     @Override
     public void extractDocument(Document document) {
         Elements elementsByClass = document.getElementsByClass("fontbox");
-        for (Element a : elementsByClass){
+        for (Element a : elementsByClass) {
             String href = a.attr("href");
             String text = a.text();
             try {
