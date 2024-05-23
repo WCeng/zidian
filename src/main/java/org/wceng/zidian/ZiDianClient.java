@@ -2,7 +2,6 @@ package org.wceng.zidian;
 
 import org.wceng.Crawler;
 import org.wceng.component.ProcessChain;
-import org.wceng.listener.DataListener;
 
 import java.io.BufferedWriter;
 import java.io.File;

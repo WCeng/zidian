@@ -2,7 +2,6 @@ package org.wceng.gushi;
 
 import org.wceng.Crawler;
 import org.wceng.component.ProcessChain;
-import org.wceng.listener.DataListener;
 
 public class GushiClient {
 

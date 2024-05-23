@@ -11,6 +11,8 @@ public interface LayerListener {
 
     void onLayerError(LayerChecker checker, String url, Exception e);
 
+    void onConnectError(Exception e);
+
     class LayerChecker {
         Class<? extends Process> processCLass;
         int index;

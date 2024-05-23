@@ -10,7 +10,7 @@ import java.util.List;
 
 public class BundlerBuffer {
 
-    private int maxBundlerCacheCount;
+    private final int maxBundlerCacheCount;
     private final ProcessLayer layer;
     private final List<Bundler> waitCacheBundlers;
     private Bundler currentBundler;
@@ -21,16 +21,12 @@ public class BundlerBuffer {
 
     public BundlerBuffer(ProcessLayer layer) {
         this.layer = layer;
-        waitCacheBundlers = new ArrayList<>();
-        totalBundlerCachedCount = 0;
-        fileOperator = new OutFileOperator();
-        maxBundlerCacheCount = layer.chain.getConfig().getMaxCachedBundlerCount();
-        needMapCache = false;
-        needListCache = false;
-    }
-
-    void setMaxBundlerCacheCount(int maxBundlerCacheCount) {
-        this.maxBundlerCacheCount = maxBundlerCacheCount;
+        this.waitCacheBundlers = new ArrayList<>();
+        this.totalBundlerCachedCount = 0;
+        this.fileOperator = new OutFileOperator();
+        this.maxBundlerCacheCount = this.layer.getChain().getMaxCachedBundlerCount();
+        this.needMapCache = false;
+        this.needListCache = false;
     }
 
     public BundlerBuffer cacheMapIn(String path) {
@@ -51,7 +47,6 @@ public class BundlerBuffer {
         return this;
     }
 
-
     void cache(Bundler bundler) {
         if (!needMapCache && !needListCache) return;
 
@@ -68,11 +63,12 @@ public class BundlerBuffer {
 
 
     private final class OutFileOperator {
+        private final static String prefix = "[";
+        private final static String suffix = "]";
+        private final static String sign = ",";
+
         private File mapOutFile = null;
         private File listOutFile = null;
-        private final String prefix = "[";
-        private String suffix = "]";
-        private String sign = ",";
         private boolean isMapFirstPush = true;
         private boolean isListFirstPush = true;
 
@@ -137,15 +133,6 @@ public class BundlerBuffer {
 
             FileUtil.appendStringToFile(s, outFile);
         }
-
-    }
-
-    int getMaxBundlerCacheCount() {
-        return maxBundlerCacheCount;
-    }
-
-    List<Bundler> getWaitCacheBundlers() {
-        return waitCacheBundlers;
     }
 
     long getTotalBundlerCachedCount() {

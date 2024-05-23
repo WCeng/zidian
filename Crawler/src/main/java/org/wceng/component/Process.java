@@ -4,7 +4,7 @@ import org.jsoup.nodes.Document;
 
 public abstract class Process implements Runnable {
 
-    private Bundler bundler;
+    private final Bundler bundler;
 
     private Connector connector;
 

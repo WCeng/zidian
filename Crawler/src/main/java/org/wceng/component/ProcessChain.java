@@ -1,30 +1,117 @@
 package org.wceng.component;
 
-import org.wceng.listener.DataListener;
 import org.wceng.listener.LayerListener;
-import org.wceng.util.ProxyChecker;
-import org.wceng.util.SSLUtil;
 
 import java.util.Collections;
-import java.util.List;
 
 public class ProcessChain {
     private final LayerLauncher layerLauncher;
-    private final BundlerCollector bundlerCollector;
     private final ProcessExecutor processExecutor;
     private final LayerManager layerManager;
-    private final Config config;
-    private final String baseUrl;
     private LayerListener layerListener;
 
-    public ProcessChain(String baseUrl) {
-        this.baseUrl = baseUrl;
-        this.layerLauncher = new LayerLauncher(this);
-        this.bundlerCollector = new BundlerCollector(this);
-        this.processExecutor = new ProcessExecutor();
+    private final Builder builder;
+    private final String baseUrl;
+    private final boolean ignoreCertValida;
+    private final int connectTimeout;
+    private final String proxyAddress;
+    private final int proxyPort;
+    private final int connectTimeDelay;
+    private final int maxCachedBundlerCount;
+
+    public ProcessChain(Builder builder) {
+        this.builder = builder;
+        this.baseUrl = builder.baseUrl;
+        this.ignoreCertValida = builder.ignoreCertValida;
+        this.connectTimeDelay = builder.connectTimeDelay;
+        this.maxCachedBundlerCount = builder.maxCachedBundlerCount;
+        this.connectTimeout = builder.connectTimeout;
+        this.proxyAddress = builder.proxyAddress;
+        this.proxyPort = builder.proxyPort;
+
+        this.layerLauncher = new LayerLauncher();
+        this.processExecutor = new ProcessExecutor(this.builder.threadCount);
         this.layerManager = new LayerManager();
-        this.config = new Config();
     }
+
+    public int getConnectTimeDelay() {
+        return connectTimeDelay;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public int getMaxCachedBundlerCount() {
+        return maxCachedBundlerCount;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public String getProxyAddress() {
+        return proxyAddress;
+    }
+
+    public boolean isIgnoreCertValida() {
+        return ignoreCertValida;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public static class Builder {
+        private final String baseUrl;
+        private int threadCount = 10;
+        private boolean ignoreCertValida = false;
+        private int connectTimeout = 2 * 60 * 1000;
+        private String proxyAddress = null;
+        private int proxyPort = -1;
+        private int connectTimeDelay = 0;
+        private int maxCachedBundlerCount = 100;
+
+        public Builder(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public Builder setThreadCount(int threadCount) {
+            this.threadCount = threadCount;
+            return this;
+        }
+
+        public Builder setIgnoreCertValidation(boolean ignoreCertValida) {
+            this.ignoreCertValida = ignoreCertValida;
+            return this;
+        }
+
+        public Builder setConnectTimeout(int connectTimeout) {
+            this.connectTimeout = connectTimeout;
+            return this;
+        }
+
+        public Builder setProxy(String proxyAddress, int proxyPort) {
+            this.proxyAddress = proxyAddress;
+            this.proxyPort = proxyPort;
+            return this;
+        }
+
+        public Builder setConnectTimeDelay(int connectTimeDelay) {
+            this.connectTimeDelay = connectTimeDelay;
+            return this;
+        }
+
+        public Builder setMaxCachedBundlerCount(int maxCachedBundlerCount) {
+            this.maxCachedBundlerCount = maxCachedBundlerCount;
+            return this;
+        }
+
+        public ProcessChain build() {
+            return new ProcessChain(this);
+        }
+    }
+
 
     public BundlerBuffer addProcess(Class<? extends Process> processClass) {
         ProcessLayer processLayer = new ProcessLayer(processClass, this);
@@ -33,32 +120,8 @@ public class ProcessChain {
     }
 
     void setup() {
-        applyConfig(getConfig());
-
         if (layerManager.count() > 0)
-            layerLauncher.launch(getLayerManager().get(0), Collections.singletonList(getBaseUrl()));
-    }
-
-    private void applyConfig(Config config) {
-        processExecutor.setCorePoolSize(config.getCoreThreadCount());
-
-        processExecutor.setMaximumPoolSize(config.getMaxThreadCount());
-
-        List<ProcessLayer> processLayers = layerManager.getProcessLayers();
-        for (ProcessLayer layer : processLayers) {
-            layer.getBundlerBuffer().setMaxBundlerCacheCount(config.getMaxCachedBundlerCount());
-
-            ProcessCreator processCreator = layer.getProcessCreator();
-            processCreator.setConnectTimeout(config.getConnectTimeout());
-            processCreator.setProcessConnectTime(config.getConnectTimeDelay());
-            if (config.getProxyAddress() != null && config.getProxyPort() != -1)
-                layer.getProcessCreator().setProxy(ProxyChecker.createHttpProxy(config.getProxyAddress(), config.getProxyPort()));
-            if (config.isIgnoreCertValida()) {
-                processCreator.setSslSocketFactory(SSLUtil.ignoreCertValidation());
-            } else {
-                processCreator.setSslSocketFactory(SSLUtil.validateCert());
-            }
-        }
+            layerLauncher.launch(getLayerManager().get(0), Collections.singletonList(baseUrl));
     }
 
     public void setLayerListener(LayerListener layerListener) {
@@ -69,17 +132,8 @@ public class ProcessChain {
         return layerListener;
     }
 
-    @Deprecated
-    public void setDataListener(DataListener dataListener) {
-        this.bundlerCollector.setDataListener(dataListener);
-    }
-
     LayerLauncher getLayerLauncher() {
         return layerLauncher;
-    }
-
-    BundlerCollector getBundlerCollector() {
-        return bundlerCollector;
     }
 
     ProcessExecutor getProcessExecutor() {
@@ -90,12 +144,5 @@ public class ProcessChain {
         return layerManager;
     }
 
-    String getBaseUrl() {
-        return baseUrl;
-    }
-
-    public Config getConfig() {
-        return config;
-    }
 
 }

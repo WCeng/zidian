@@ -112,11 +112,13 @@ public class IdiomEntityProcess extends Process {
         } catch (Exception e) {
         }
 
-
         if (idiom.contains(pronunciation)) {
             idiom = idiom.substring(0, idiom.indexOf(pronunciation) - 1);
         }
 
+        if(idiom.contains("成语：") || idiom.contains("成语:")){
+            idiom = idiom.substring( 3);
+        }
 
         getBundler().putHashMap("idiom", idiom);
         getBundler().putHashMap("pronunciation", pronunciation);

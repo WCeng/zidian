@@ -9,8 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ProcessExecutor extends ThreadPoolExecutor {
 
-    private static final int DEFAULT_CORE_POOL_SIZE = 10;
-    private static final int DEFAULT_MAXIMUM_POOL_SIZE = 20;
     private static final long DEFAULT_KEEP_ALIVE_TIME = 60L;
     private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
 
@@ -20,8 +18,8 @@ public class ProcessExecutor extends ThreadPoolExecutor {
         void onProcessFinished(Process process);
     }
 
-    public ProcessExecutor() {
-        this(DEFAULT_CORE_POOL_SIZE, DEFAULT_MAXIMUM_POOL_SIZE, DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT, new LinkedBlockingQueue<>());
+    public ProcessExecutor(final int threadCount) {
+        this(threadCount, threadCount, DEFAULT_KEEP_ALIVE_TIME, DEFAULT_TIME_UNIT, new LinkedBlockingQueue<>());
     }
 
     public ProcessExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
@@ -41,17 +39,19 @@ public class ProcessExecutor extends ThreadPoolExecutor {
         execute(process);
     }
 
-    public void addProcessFinishedListener(Class<? extends Process> processClass, ProcessFinishedListener processFinishedListener) {
+    public void addProcessFinishedListener(
+            Class<? extends Process> processClass,
+            ProcessFinishedListener processFinishedListener) {
         hashMap.put(processClass, processFinishedListener);
     }
 
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
         super.afterExecute(r, t);
-        notify((Process) r, t);
+        notify((Process) r);
     }
 
-    private void notify(Process p, Throwable t) {
+    private void notify(Process p) {
         if (hashMap.containsKey(p.getClass())) {
             hashMap.get(p.getClass()).onProcessFinished(p);
         }

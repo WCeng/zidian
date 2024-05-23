@@ -8,22 +8,23 @@ import org.wceng.listener.LayerListener;
 public class IdiomClient {
 
     public static void main(String[] args) {
-        ProcessChain chain = new ProcessChain("https://www.chazidian.com/ci_pinyin/#a");
+        ProcessChain chain = new ProcessChain.Builder("https://www.chazidian.com/ci_pinyin/#a")
+                .setThreadCount(30)
+                .setMaxCachedBundlerCount(300)
+                .setConnectTimeout(5 * 60 * 1000)
+                .build();
+
         chain.addProcess(PinyinUrlProcess.class);
         chain.addProcess(IdiomUrlProcess.class);
         chain.addProcess(IdiomEntityProcess.class)
-                .cacheMapIn("C:\\Users\\王程程\\Desktop\\test\\idiom.json");
-
-        chain.getConfig().setCoreThreadCount(20);
-        chain.getConfig().setMaxThreadCount(35);
-        chain.getConfig().setMaxCachedBundlerCount(300);
-        chain.getConfig().setConnectTimeout(5 * 60 * 1000);
+                .cacheMapIn("C:\\Users\\王程程\\Desktop\\test\\idiom.json")
+                .cacheListIn("C:\\Users\\王程程\\Desktop\\test\\idiomList.json");
 
         chain.setLayerListener(new LayerListener() {
             @Override
             public void onLayerCompleted(LayerChecker checker, ProcessLayer.LayerInfo info) {
                 if (checker.is(2)) {
-                    System.out.println(info.exceptionProcessCount);
+                    System.out.println("error process num: " + info.exceptionProcessCount);
                     System.out.println("完成");
                 }
             }
@@ -41,7 +42,14 @@ public class IdiomClient {
                     System.err.println(e.getMessage() + ":" + url);
                 }
             }
+
+            @Override
+            public void onConnectError(Exception e) {
+                e.printStackTrace();
+            }
         });
-        Crawler.getInstance().addChain(chain).setup();
+
+
+        Crawler.getInstance().launch(chain);
     }
 }

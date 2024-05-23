@@ -9,30 +9,10 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
     private final ProcessCreator processCreator;
     private final ProcessManager processManager;
 
-    final Class<? extends Process> processClass;
-    final ProcessChain chain;
-    boolean isCompleted;
+    private final Class<? extends Process> processClass;
+    private final ProcessChain chain;
+    private boolean isCompleted;
     private final BundlerBuffer bundlerBuffer;
-
-    public final static class LayerInfo {
-        public final Class<? extends Process> processClass;
-        public final boolean isCompleted;
-        public final long cachedBundlerCount;
-        public final Bundler currentBundler;
-        public final long exceptionProcessCount;
-
-        public LayerInfo(Class<? extends Process> processClass,
-                         boolean isCompleted,
-                         long cachedBundlerCount,
-                         Bundler currentBundler,
-                         long exceptionProcessCount) {
-            this.processClass = processClass;
-            this.isCompleted = isCompleted;
-            this.cachedBundlerCount = cachedBundlerCount;
-            this.currentBundler = currentBundler;
-            this.exceptionProcessCount = exceptionProcessCount;
-        }
-    }
 
     public ProcessLayer(final Class<? extends Process> processClass, ProcessChain chain) {
         this.processClass = processClass;
@@ -41,7 +21,7 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
         this.processManager = new ProcessManager();
         this.bundlerBuffer = new BundlerBuffer(this);
 
-        chain.getProcessExecutor().addProcessFinishedListener(processClass, this);
+        this.chain.getProcessExecutor().addProcessFinishedListener(processClass, this);
     }
 
     public void fetch(List<String> urls) throws Exception {
@@ -124,6 +104,26 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
         }
     }
 
+    public final static class LayerInfo {
+        public final Class<? extends Process> processClass;
+        public final boolean isCompleted;
+        public final long cachedBundlerCount;
+        public final Bundler currentBundler;
+        public final long exceptionProcessCount;
+
+        public LayerInfo(Class<? extends Process> processClass,
+                         boolean isCompleted,
+                         long cachedBundlerCount,
+                         Bundler currentBundler,
+                         long exceptionProcessCount) {
+            this.processClass = processClass;
+            this.isCompleted = isCompleted;
+            this.cachedBundlerCount = cachedBundlerCount;
+            this.currentBundler = currentBundler;
+            this.exceptionProcessCount = exceptionProcessCount;
+        }
+    }
+
     public Class<? extends Process> getProcessClass() {
         return processClass;
     }
@@ -132,11 +132,11 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
         return isCompleted;
     }
 
-    public ProcessCreator getProcessCreator() {
-        return processCreator;
-    }
-
     public BundlerBuffer getBundlerBuffer() {
         return bundlerBuffer;
+    }
+
+    public ProcessChain getChain() {
+        return chain;
     }
 }
