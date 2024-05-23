@@ -4,30 +4,50 @@ import org.jsoup.nodes.Document;
 
 public abstract class Process implements Runnable {
 
-    DataManager dataManager;
+    private Bundler bundler;
 
-    Connector connector;
+    private Connector connector;
+
+    private boolean isCompleted;
+
+    private Exception exception;
+
+    public Process() {
+        bundler = new Bundler();
+    }
 
     @Override
     public void run() {
         try {
             extractDocument(connector.connect());
         } catch (Exception e) {
-            e.printStackTrace();
+            exception = e;
         }
     }
 
-    public DataManager getDataManager() {
-        return dataManager;
-    }
+    public abstract void extractDocument(Document doc) throws Exception;
 
-    public abstract void extractDocument(Document document);
-
-    public void setConnector(Connector connector) {
+    void setConnector(Connector connector) {
         this.connector = connector;
     }
 
-    public void setDataManager(DataManager dataManager) {
-        this.dataManager = dataManager;
+    public Bundler getBundler() {
+        return bundler;
+    }
+
+    public String getUrl() {
+        return connector.getUrl();
+    }
+
+    boolean isCompleted() {
+        return isCompleted;
+    }
+
+    void setCompleted(boolean completed) {
+        isCompleted = completed;
+    }
+
+    public Exception getException() {
+        return exception;
     }
 }

@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="boilerpipe-1.1.0-javadoc (4)">
+    <CLASSES />
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/Crawler/lib/boilerpipe-1.1.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES />
+  </library>
+</component>
