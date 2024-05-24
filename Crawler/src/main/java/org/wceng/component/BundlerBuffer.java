@@ -139,7 +139,7 @@ public class BundlerBuffer {
         return totalBundlerCachedCount;
     }
 
-    public Bundler getCurrentBundler() {
+    Bundler getCurrentBundler() {
         return currentBundler;
     }
 }

@@ -8,10 +8,14 @@ import org.wceng.util.ElementUtil;
 public class PoetDetailProcess extends Process {
     @Override
     public void extractDocument(Document doc) throws Exception {
-        String name = doc.select("h1").text();
+        String name = "";
         String dynasty = "";
         String des = "";
         String imgUrl = "";
+        try {
+            name = doc.select("h1").text();
+        }catch (Exception e) {}
+
         try {
             String dynastyStr = doc.select(".ml-1").text();
             dynasty = dynastyStr.substring(1, dynastyStr.length() - 1);

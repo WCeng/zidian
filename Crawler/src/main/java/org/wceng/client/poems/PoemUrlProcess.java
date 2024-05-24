@@ -16,7 +16,6 @@ public class PoemUrlProcess extends Process {
             getBundler().putNextLayerUrls(poetUrl);
         }
 
-
         Element nextElem = doc.select(".pagination .page-item").last().select("a").first();
         if (nextElem.hasAttr("aria-label") && nextElem.attr("aria-label").equals("Next")) {
             String nextHref = ElementUtil.absHref(nextElem);

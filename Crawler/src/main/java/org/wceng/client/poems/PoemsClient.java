@@ -1,46 +1,49 @@
 package org.wceng.client.poems;
 
-import org.wceng.component.Bundler;
 import org.wceng.component.Crawler;
 import org.wceng.component.ProcessChain;
-import org.wceng.util.BundlerUtil;
-import org.wceng.util.FileUtil;
-
-import java.io.File;
-import java.util.List;
+import org.wceng.component.ProcessLayer;
+import org.wceng.listener.LayerListener;
 
 public class PoemsClient {
 
-    public static void main(String[] args) {
-//        ProcessChain chain = new ProcessChain("https://www.xungushici.com/authors");
-//        chain.addProcess(PoetUrlProcess.class);
-//        chain.addProcess(PoetDetailProcess.class);
-//        chain.addProcess(PoemUrlProcess.class);
-//        chain.addProcess(PoemDetailProcess.class);
-//        Crawler.getInstance().addChain(chain).setup();
-//
-//
-//        chain.setDataListener(new DataListener() {
-//            @Override
-//            public void afterLayerFetch(ProcessChecker checker, List<Bundler> bundlers) {
-//                if (checker.is(PoetDetailProcess.class)) {
-//                    String s = BundlerUtil.convertMapToJson(bundlers);
-//                    FileUtil.saveStringToFile(s, new File("C:\\Users\\王程程\\Desktop\\test\\poets.txt"));
-//                }
-//                if (checker.is(PoemDetailProcess.class)) {
-//                    String s = BundlerUtil.convertMapToJson(bundlers);
-//                    FileUtil.saveStringToFile(s, new File("C:\\Users\\王程程\\Desktop\\test\\poems.txt"));
-//                }
-//            }
-//
-//            @Override
-//            public void afterProcessFetch(ProcessChecker checker, Bundler bundler) {
-//                if (checker.is(PoemDetailProcess.class)) {
-//                    System.out.println(bundler.getHashMap().get("poet"));
-//                }
-//            }
-//        });
+    public static ProcessChain poemsChain =
+            new ProcessChain.Builder("https://www.xungushici.com/authors")
+                    .build();
+
+    static {
+        poemsChain.addProcess(PoetUrlProcess.class);
+        poemsChain.addProcess(PoetDetailProcess.class)
+                .cacheMapIn("C:\\Users\\王程程\\Desktop\\test\\poets.json");
+        poemsChain.addProcess(PoemUrlProcess.class);
+        poemsChain.addProcess(PoemDetailProcess.class)
+                .cacheMapIn("C:\\Users\\王程程\\Desktop\\test\\poems.json");
+        Crawler.getInstance().launch(poemsChain);
+
+        poemsChain.setLayerListener(new LayerListener() {
+            @Override
+            public void onLayerCompleted(LayerChecker checker, ProcessLayer.LayerInfo info) {
+
+            }
+
+            @Override
+            public void onLayerRunning(LayerChecker checker, ProcessLayer.LayerInfo info) {
+                if (checker.is(3))
+                    System.out.println(
+                            info.currentBundler.getHashMap().get("poet") + " : " +
+                                    info.currentBundler.getHashMap().get("title"));
+            }
+
+            @Override
+            public void onLayerError(LayerChecker checker, String url, Exception e) {
+            }
+
+            @Override
+            public void onConnectError(Exception e) {
+            }
+        });
     }
+
 }
 
 

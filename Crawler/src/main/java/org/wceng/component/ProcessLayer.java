@@ -2,6 +2,7 @@ package org.wceng.component;
 
 import org.wceng.listener.LayerListener;
 
+import java.util.HashSet;
 import java.util.List;
 
 public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
@@ -13,6 +14,7 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
     private final ProcessChain chain;
     private boolean isCompleted;
     private final BundlerBuffer bundlerBuffer;
+    private final HashSet<String> fetchedUrls;
 
     public ProcessLayer(final Class<? extends Process> processClass, ProcessChain chain) {
         this.processClass = processClass;
@@ -20,11 +22,17 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
         this.processCreator = new ProcessCreator(this);
         this.processManager = new ProcessManager();
         this.bundlerBuffer = new BundlerBuffer(this);
+        this.fetchedUrls = new HashSet<>();
 
         this.chain.getProcessExecutor().addProcessFinishedListener(processClass, this);
     }
 
     public void fetch(List<String> urls) throws Exception {
+        if (fetchedUrls.containsAll(urls)) {
+            return;
+        }
+
+        fetchedUrls.addAll(urls);
         List<Process> processes = processCreator.createProcesses(urls);
         chain.getProcessExecutor().executeProcesses(processes);
         processManager.addProcesses(processes);

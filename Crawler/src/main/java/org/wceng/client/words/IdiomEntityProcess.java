@@ -23,7 +23,6 @@ public class IdiomEntityProcess extends Process {
             }
         }
 
-
         /**
          * idiom
          */
@@ -119,6 +118,7 @@ public class IdiomEntityProcess extends Process {
         if(idiom.contains("成语：") || idiom.contains("成语:")){
             idiom = idiom.substring( 3);
         }
+        idiom = idiom.trim();
 
         getBundler().putHashMap("idiom", idiom);
         getBundler().putHashMap("pronunciation", pronunciation);

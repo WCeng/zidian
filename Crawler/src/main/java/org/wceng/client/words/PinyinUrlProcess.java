@@ -17,7 +17,8 @@ public class PinyinUrlProcess extends Process {
             Element aElem = zimuSpans.get(i);
             String href = ElementUtil.absHref(aElem);
             if (i > 0) {
-                getBundler().putNextLayerUrls(href);
+                if (i < 3)
+                    getBundler().putNextLayerUrls(href);
             } else {
                 getBundler().putNextLayerUrls("https://www.chazidian.com/ci_a_27/");
             }

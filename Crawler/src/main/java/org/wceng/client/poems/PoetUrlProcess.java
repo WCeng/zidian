@@ -14,10 +14,7 @@ public class PoetUrlProcess extends Process {
         Element nextElem = doc.select(".page-link").last();
         if (nextElem.hasAttr("aria-label") && nextElem.attr("aria-label").equals("Next")) {
             String _nextHref = ElementUtil.absHref(nextElem);
-            index++;
-            if(index <3) {
-                getBundler().putLoopLayerUrls(_nextHref);
-            }
+            getBundler().putLoopLayerUrls(_nextHref);
         }
 
         Elements poetElems = doc.select(".ml-1 .card-title a:nth-of-type(2)");
@@ -25,7 +22,5 @@ public class PoetUrlProcess extends Process {
             String _poetHref = ElementUtil.absHref(poetElem);
             getBundler().putNextLayerUrls(_poetHref);
         }
-
-//        getBundler().putNextLayerUrls(ElementUtil.abseHref(poetElems.first()));
     }
 }

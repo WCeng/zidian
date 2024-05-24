@@ -9,17 +9,13 @@ public class IdiomClient {
 
     public static void main(String[] args) {
         ProcessChain chain = new ProcessChain.Builder("https://www.chazidian.com/ci_pinyin/#a")
-                .setThreadCount(30)
-                .setMaxCachedBundlerCount(300)
-                .setConnectTimeout(5 * 60 * 1000)
+                .setThreadCount(70)
                 .build();
 
         chain.addProcess(PinyinUrlProcess.class);
         chain.addProcess(IdiomUrlProcess.class);
         chain.addProcess(IdiomEntityProcess.class)
-                .cacheMapIn("C:\\Users\\王程程\\Desktop\\test\\idiom.json")
-                .cacheListIn("C:\\Users\\王程程\\Desktop\\test\\idiomList.json");
-
+                .cacheMapIn("C:\\Users\\王程程\\Desktop\\test\\idiom.json");
         chain.setLayerListener(new LayerListener() {
             @Override
             public void onLayerCompleted(LayerChecker checker, ProcessLayer.LayerInfo info) {
