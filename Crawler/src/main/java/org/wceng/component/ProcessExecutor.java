@@ -25,8 +25,8 @@ public class ProcessExecutor extends ThreadPoolExecutor {
     public ProcessExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
         this.hashMap = new HashMap<>();
-        allowCoreThreadTimeOut(true);
-        setKeepAliveTime(1, TimeUnit.SECONDS);
+//        allowCoreThreadTimeOut(true);
+//        setKeepAliveTime(1, TimeUnit.SECONDS);
     }
 
     public void executeProcesses(List<Process> processes) {
@@ -48,13 +48,20 @@ public class ProcessExecutor extends ThreadPoolExecutor {
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
         super.afterExecute(r, t);
-        notify((Process) r);
+        Process process = (Process) r;
+        process.setCompleted(true);
+        notify(process);
     }
 
     private void notify(Process p) {
         if (hashMap.containsKey(p.getClass())) {
             hashMap.get(p.getClass()).onProcessFinished(p);
         }
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
     }
 
 }

@@ -1,5 +1,6 @@
 package org.wceng.component;
 
+import com.sun.istack.internal.Nullable;
 import org.jsoup.nodes.Document;
 
 public abstract class Process implements Runnable {
@@ -12,6 +13,9 @@ public abstract class Process implements Runnable {
 
     private Exception exception;
 
+    @Nullable
+    private String docTitle;
+
     public Process() {
         bundler = new Bundler();
     }
@@ -19,7 +23,13 @@ public abstract class Process implements Runnable {
     @Override
     public void run() {
         try {
-            extractDocument(connector.connect());
+            Document document = connector.connect();
+
+            if(document != null) {
+                this.docTitle = document.title();
+            }
+            extractDocument(document);
+
         } catch (Exception e) {
             exception = e;
         }
@@ -43,11 +53,21 @@ public abstract class Process implements Runnable {
         return isCompleted;
     }
 
+    Connector getConnector() {
+        return connector;
+    }
+
     void setCompleted(boolean completed) {
         isCompleted = completed;
     }
 
-    public Exception getException() {
+    Exception getException() {
         return exception;
     }
+
+    String getDocTitle(){
+        return docTitle;
+    }
+
+
 }

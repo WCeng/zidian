@@ -2,7 +2,6 @@ package org.wceng.component;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.wceng.listener.LayerListener;
 import org.wceng.util.SSLUtil;
 
 import javax.net.ssl.SSLSocketFactory;
@@ -64,5 +63,9 @@ public class Connector {
 
     public String getUrl() {
         return url;
+    }
+
+    ProcessCreator getProcessCreator() {
+        return processCreator;
     }
 }

@@ -1,37 +1,36 @@
 package org.wceng.component;
 
-import org.wceng.listener.LayerListener;
-
 import java.util.Collections;
+import java.util.List;
 
 public class ProcessChain {
-    private final LayerLauncher layerLauncher;
     private final ProcessExecutor processExecutor;
     private final LayerManager layerManager;
     private LayerListener layerListener;
 
     private final Builder builder;
-    private final String baseUrl;
+    private final List<String> baseUrlList;
     private final boolean ignoreCertValida;
     private final int connectTimeout;
     private final String proxyAddress;
     private final int proxyPort;
     private final int connectTimeDelay;
     private final int maxCachedBundlerCount;
+    private final boolean allowFetchLayered;
 
     public ProcessChain(Builder builder) {
         this.builder = builder;
-        this.baseUrl = builder.baseUrl;
+        this.baseUrlList = builder.baseUrlList;
         this.ignoreCertValida = builder.ignoreCertValida;
         this.connectTimeDelay = builder.connectTimeDelay;
         this.maxCachedBundlerCount = builder.maxCachedBundlerCount;
         this.connectTimeout = builder.connectTimeout;
         this.proxyAddress = builder.proxyAddress;
         this.proxyPort = builder.proxyPort;
+        this.allowFetchLayered = builder.allowFetchLayered;
 
-        this.layerLauncher = new LayerLauncher();
-        this.processExecutor = new ProcessExecutor(this.builder.threadCount);
         this.layerManager = new LayerManager();
+        this.processExecutor = new ProcessExecutor(this.builder.threadCount);
     }
 
     public int getConnectTimeDelay() {
@@ -58,12 +57,16 @@ public class ProcessChain {
         return ignoreCertValida;
     }
 
-    public String getBaseUrl() {
-        return baseUrl;
+    public boolean isAllowFetchLayered() {
+        return allowFetchLayered;
+    }
+
+    public List<String> getBaseUrlList() {
+        return baseUrlList;
     }
 
     public static class Builder {
-        private final String baseUrl;
+        private final List<String> baseUrlList;
         private int threadCount = 10;
         private boolean ignoreCertValida = false;
         private int connectTimeout = 2 * 60 * 1000;
@@ -71,9 +74,14 @@ public class ProcessChain {
         private int proxyPort = -1;
         private int connectTimeDelay = 0;
         private int maxCachedBundlerCount = 100;
+        private boolean allowFetchLayered = true;
 
         public Builder(String baseUrl) {
-            this.baseUrl = baseUrl;
+            this(Collections.singletonList(baseUrl));
+        }
+
+        public Builder(List<String> baseUrlList) {
+            this.baseUrlList = baseUrlList;
         }
 
         public Builder setThreadCount(int threadCount) {
@@ -107,6 +115,11 @@ public class ProcessChain {
             return this;
         }
 
+        public Builder setAllowFetchLayered(boolean allowFetchLayered) {
+            this.allowFetchLayered = allowFetchLayered;
+            return this;
+        }
+
         public ProcessChain build() {
             return new ProcessChain(this);
         }
@@ -120,8 +133,7 @@ public class ProcessChain {
     }
 
     void setup() {
-        if (layerManager.count() > 0)
-            layerLauncher.launch(getLayerManager().get(0), Collections.singletonList(baseUrl));
+        layerManager.launchFirst(baseUrlList);
     }
 
     public void setLayerListener(LayerListener layerListener) {
@@ -130,10 +142,6 @@ public class ProcessChain {
 
     LayerListener getLayerListener() {
         return layerListener;
-    }
-
-    LayerLauncher getLayerLauncher() {
-        return layerLauncher;
     }
 
     ProcessExecutor getProcessExecutor() {

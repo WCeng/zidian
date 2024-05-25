@@ -1,6 +1,5 @@
 package org.wceng.client.poems;
 
-import com.google.gson.Gson;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;

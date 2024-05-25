@@ -1,63 +1,49 @@
 package org.wceng.component;
 
-import org.wceng.listener.LayerListener;
-
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
 
     private final ProcessCreator processCreator;
-    private final ProcessManager processManager;
 
     private final Class<? extends Process> processClass;
     private final ProcessChain chain;
     private boolean isCompleted;
     private final BundlerBuffer bundlerBuffer;
-    private final HashSet<String> fetchedUrls;
+    private final List<String> nextLayerUrls;
+    private final boolean allowFetchLayered;
+    private final LayerFetcher layerFetcher;
 
     public ProcessLayer(final Class<? extends Process> processClass, ProcessChain chain) {
         this.processClass = processClass;
         this.chain = chain;
         this.processCreator = new ProcessCreator(this);
-        this.processManager = new ProcessManager();
+//        this.processManager = new ProcessManager();
         this.bundlerBuffer = new BundlerBuffer(this);
-        this.fetchedUrls = new HashSet<>();
+        this.nextLayerUrls = new ArrayList<>();
+        this.allowFetchLayered = chain.isAllowFetchLayered();
+        this.isCompleted = false;
 
+        if (allowFetchLayered) {
+            this.layerFetcher = new FloorFetcher(this, chain.getProcessExecutor());
+        } else {
+            this.layerFetcher = new GradualFetcher(this, chain.getProcessExecutor());
+        }
         this.chain.getProcessExecutor().addProcessFinishedListener(processClass, this);
     }
 
-    public void fetch(List<String> urls) throws Exception {
-        if (fetchedUrls.containsAll(urls)) {
-            return;
-        }
-
-        fetchedUrls.addAll(urls);
-        List<Process> processes = processCreator.createProcesses(urls);
-        chain.getProcessExecutor().executeProcesses(processes);
-        processManager.addProcesses(processes);
+    public void launchWith(List<String> urls) throws Exception {
+        layerFetcher.fetch(urls);
     }
 
     @Override
     public synchronized void onProcessFinished(Process process) {
-        process.setCompleted(true);
-        processManager.removeProcess(process);
-        if (process.getException() != null) {
-            processManager.addExceptProcess(process);
-        }
+        layerFetcher.onListenProcessCompleted(process);
 
-        //检查当前layer是否需要循环或是否需要打开下层layer
-        checkLayerLaunch(process.getBundler());
-
-        //判断当前layer是否完成
-        if (checkLayerComplete()) {
-            isCompleted = true;
-        }
-
-        //缓存数据
         bundlerBuffer.cache(process.getBundler());
 
-        //监听数据
+//        监听数据
         if (null != chain.getLayerListener()) {
             LayerListener.LayerChecker checker =
                     new LayerListener.LayerChecker(processClass, chain.getLayerManager().index(this));
@@ -66,7 +52,8 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
                     isCompleted,
                     bundlerBuffer.getTotalBundlerCachedCount(),
                     bundlerBuffer.getCurrentBundler(),
-                    processManager.getExceptProcessCount());
+                    0,
+                    process.getDocTitle());
             chain.getLayerListener().onLayerRunning(checker, info);
 
             if (isCompleted) {
@@ -77,39 +64,7 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
                 chain.getLayerListener().onLayerError(checker, process.getUrl(), process.getException());
             }
         }
-    }
 
-    private boolean checkLayerComplete() {
-        LayerManager layerManager = chain.getLayerManager();
-        int index = layerManager.index(this);
-        if (index - 1 >= 0) {
-            ProcessLayer preLayer = layerManager.get(index - 1);
-            boolean completed = preLayer.isCompleted();
-            boolean b = !processManager.hasRunningProcess();
-            return completed && b;
-        } else {
-            return !processManager.hasRunningProcess();
-        }
-    }
-
-    private void checkLayerLaunch(Bundler bundler) {
-        LayerLauncher layerLauncher = chain.getLayerLauncher();
-        LayerManager layerManager = chain.getLayerManager();
-
-        int index = layerManager.index(this);
-
-        List<String> nextLayerUrls = bundler.getNextLayerUrls();
-        List<String> loopLayerUrls = bundler.getLoopLayerUrl();
-
-        if (!nextLayerUrls.isEmpty()) {
-            if (index < layerManager.count() - 1) {
-                layerLauncher.launch(layerManager.get(index + 1), nextLayerUrls);
-            }
-        }
-
-        if (!loopLayerUrls.isEmpty()) {
-            layerLauncher.launch(layerManager.get(index), loopLayerUrls);
-        }
     }
 
     public final static class LayerInfo {
@@ -118,22 +73,29 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
         public final long cachedBundlerCount;
         public final Bundler currentBundler;
         public final long exceptionProcessCount;
+        public final String currentProcessDocTitle;
 
-        public LayerInfo(Class<? extends Process> processClass,
-                         boolean isCompleted,
-                         long cachedBundlerCount,
-                         Bundler currentBundler,
-                         long exceptionProcessCount) {
+        LayerInfo(Class<? extends Process> processClass,
+                  boolean isCompleted,
+                  long cachedBundlerCount,
+                  Bundler currentBundler,
+                  long exceptionProcessCount,
+                  String currentProcessDocTitle) {
             this.processClass = processClass;
             this.isCompleted = isCompleted;
             this.cachedBundlerCount = cachedBundlerCount;
             this.currentBundler = currentBundler;
             this.exceptionProcessCount = exceptionProcessCount;
+            this.currentProcessDocTitle = currentProcessDocTitle;
         }
     }
 
     public Class<? extends Process> getProcessClass() {
         return processClass;
+    }
+
+    void setCompleted(boolean completed) {
+        isCompleted = completed;
     }
 
     public boolean isCompleted() {
@@ -146,5 +108,9 @@ public class ProcessLayer implements ProcessExecutor.ProcessFinishedListener {
 
     public ProcessChain getChain() {
         return chain;
+    }
+
+    public ProcessCreator getProcessCreator() {
+        return processCreator;
     }
 }
